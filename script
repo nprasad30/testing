@@ -6,10 +6,7 @@ def get_ec2_enis(ec2_client):
     instances = response['Reservations']
 
 
-Apologies for the oversight. The ec2_client parameter in the get_ec2_enis() function should be replaced with ec2_resource if you are using the Boto3 resource-based approach for EC2. Here's the updated code:
 
-python
-Copy code
 def get_ec2_enis(ec2_resource):
     enis = []
 
