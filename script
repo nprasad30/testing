@@ -30,3 +30,35 @@ def get_lambda_eni_metadata(lambda_client, lambda_function_name):
         print(f"Error retrieving metadata for Lambda function {lambda_function_name}: {e}")
 
     return metadata
+    
+    def main():
+    # Create the EC2 and Lambda clients
+    ec2_client = boto3.client('ec2')
+    lambda_client = boto3.client('lambda')
+
+    # Get EC2 ENIs and their metadata
+    ec2_enis = get_ec2_enis(ec2_client)
+
+    # Get Lambda ENIs and their metadata
+    lambda_enis = get_lambda_enis(lambda_client)
+
+    # Display the EC2 ENIs and their metadata
+    print("EC2 ENIs:")
+    for eni in ec2_enis:
+        print(f"ENI ID: {eni['ENIId']}")
+        print(f"Private IP: {eni['PrivateIP']}")
+        print(f"Description: {eni['Description']}")
+        print(f"Tags: {eni['Tags']}")
+        print("")
+
+    # Display the Lambda functions and their ENIs with metadata
+    print("Lambda Functions:")
+    for function in lambda_enis:
+        print(f"Function Name: {function['FunctionName']}")
+        for eni_metadata in function['ENIs']:
+            print(f"ENI ID: {eni_metadata['ENIId']}")
+            print(f"Private IP: {eni_metadata['PrivateIP']}")
+            print(f"Description: {eni_metadata['Description']}")
+            print(f"Tags: {eni_metadata['Tags']}")
+            print("")
+
