@@ -5,17 +5,27 @@ def get_ec2_enis(ec2_client):
     response = ec2_client.describe_instances()
     instances = response['Reservations']
 
+
+Apologies for the oversight. The ec2_client parameter in the get_ec2_enis() function should be replaced with ec2_resource if you are using the Boto3 resource-based approach for EC2. Here's the updated code:
+
+python
+Copy code
+def get_ec2_enis(ec2_resource):
+    enis = []
+
+    # Retrieve EC2 instances
+    instances = ec2_resource.instances.all()
+
     # Iterate over instances and their network interfaces
-    for reservation in instances:
-        for instance in reservation['Instances']:
-            for interface in instance['NetworkInterfaces']:
-                eni = {
-                    'ENIId': interface['NetworkInterfaceId'],
-                    'PrivateIP': interface['PrivateIpAddress'],
-                    'Description': interface['Description'],
-                    'Tags': interface.get('Tags', [])
-                }
-                enis.append(eni)
+    for instance in instances:
+        for interface in instance.network_interfaces:
+            eni = {
+                'ENIId': interface.id,
+                'PrivateIP': interface.private_ip_address,
+                'Description': interface.description,
+                'Tags': interface.tags
+            }
+            enis.append(eni)
 
     return enis
 
