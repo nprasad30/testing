@@ -1,138 +1,46 @@
-def select_enis(resources):
-    print("Resources and their respective ENIs:")
-    for resource_type, enis in resources.items():
-        print(f"{resource_type}:")
-        for index, eni in enumerate(enis):
-            print(f"  - ENI ID: {enis[index]['ENI ID']}")
-            print(f"    Private IP: {enis[index]['Private IP']}")
-            print(f"    Name: {enis[index]['Name']}")
-            print(f"    Description: {enis[index]['Description']}")
-            print(f"    Tags: {enis[index]['Tags']}")
-
-
-
-
-
-
-
-
-
-def get_ec2_enis(ec2_client):
-    enis = []
-
-    # Retrieve all EC2 network interfaces
-    response = ec2_client.describe_network_interfaces()
-
-    # Iterate over the network interfaces and retrieve their associated information
-    for interface in response['NetworkInterfaces']:
-        eni = {
-            'ENI ID': interface['NetworkInterfaceId'],
-            'Private IP': interface['PrivateIpAddress'],
-            'Name': '',
-            'Description': '',
-            'Tags': {}
-        }
-
-        # Retrieve ENI tags if available
-        if 'TagSet' in interface:
-            for tag in interface['TagSet']:
-                if tag['Key'] == 'Name':
-                    eni['Name'] = tag['Value']
-                elif tag['Key'] == 'Description':
-                    eni['Description'] = tag['Value']
-                else:
-                    eni['Tags'][tag['Key']] = tag['Value']
-
-        enis.append(eni)
-
-    return eni
+import boto3
+from prettytable import PrettyTable
 
 def get_ec2_enis(ec2_resource):
     enis = []
-
-    # Retrieve EC2 instances
-    instances = ec2_resource.instances.all()
-
-    # Iterate over instances and their network interfaces
-    for instance in instances:
-        for interface in instance.network_interfaces:
-            eni = {
-                'ENIId': interface.id,
-                'PrivateIP': interface.private_ip_address,
-                'Description': interface.description,
-                'Tags': interface.tags
-            }
-            enis.append(eni)
-
+    for eni in ec2_resource.network_interfaces.all():
+        eni_info = {
+            'ENI ID': eni.id,
+            'Instance ID': eni.attachment['InstanceId'],
+            'Private IP': eni.private_ip_address,
+            'Tags': eni.tags
+        }
+        enis.append(eni_info)
     return enis
-
-
-
-
-
-
 
 def get_lambda_enis(lambda_client):
     enis = []
-
-    try:
-        response = lambda_client.list_functions()
-        functions = response['Functions']
-        for function in functions:
-            function_name = function['FunctionName']
-            eni_metadata = get_lambda_eni_metadata(lambda_client, function_name)
-            enis.append({
-                'FunctionName': function_name,
-                'ENIs': eni_metadata
-            })
-    except Exception as e:
-        print(f"Error retrieving Lambda ENIs: {e}")
-
+    response = lambda_client.list_functions()
+    for function in response['Functions']:
+        function_name = function['FunctionName']
+        function_arn = function['FunctionArn']
+        eni_configurations = function['VpcConfig']['SubnetIds']
+        for eni in eni_configurations:
+            eni_info = {
+                'ENI ID': eni,
+                'Function Name': function_name,
+                'Function ARN': function_arn,
+                'Tags': []  # Lambda ENIs do not have tags
+            }
+            enis.append(eni_info)
     return enis
 
-def get_lambda_eni_metadata(lambda_client, lambda_function_name):
-    metadata = []
+def select_enis(resources):
+    print("Resources and their respective ENIs:")
+    table = PrettyTable()
+    table.field_names = ['Resource Type', 'ENI ID', 'Additional Metadata']
+    for resource_type, enis in resources.items():
+        for eni in enis:
+            additional_metadata = f"Instance ID: {eni['Instance ID']}, Private IP: {eni['Private IP']}, Tags: {eni['Tags']}"
+            table.add_row([resource_type, eni['ENI ID'], additional_metadata])
+    print(table)
 
-    try:
-        response = lambda_client.get_function_configuration(FunctionName=lambda_function_name)
-        eni_configurations = response['VpcConfig']['SubnetIds']
-        for eni_configuration in eni_configurations:
-            eni_id = eni_configuration['NetworkInterfaceId']
-            eni_metadata = get_eni_metadata(ec2_client, eni_id)
-            metadata.append(eni_metadata)
-    except Exception as e:
-        print(f"Error retrieving metadata for Lambda function {lambda_function_name}: {e}")
+    source_eni = input("Enter the source ENI: ")
+    destination_eni = input("Enter the destination ENI: ")
 
-    return metadata
-    
-    def main():
-    # Create the EC2 and Lambda clients
-    ec2_client = boto3.client('ec2')
-    lambda_client = boto3.client('lambda')
-
-    # Get EC2 ENIs and their metadata
-    ec2_enis = get_ec2_enis(ec2_client)
-
-    # Get Lambda ENIs and their metadata
-    lambda_enis = get_lambda_enis(lambda_client)
-
-    # Display the EC2 ENIs and their metadata
-    print("EC2 ENIs:")
-    for eni in ec2_enis:
-        print(f"ENI ID: {eni['ENIId']}")
-        print(f"Private IP: {eni['PrivateIP']}")
-        print(f"Description: {eni['Description']}")
-        print(f"Tags: {eni['Tags']}")
-        print("")
-
-    # Display the Lambda functions and their ENIs with metadata
-    print("Lambda Functions:")
-    for function in lambda_enis:
-        print(f"Function Name: {function['FunctionName']}")
-        for eni_metadata in function['ENIs']:
-            print(f"ENI ID: {eni_metadata['ENIId']}")
-            print(f"Private IP: {eni_metadata['PrivateIP']}")
-            print(f"Description: {eni_metadata['Description']}")
-            print(f"Tags: {eni_metadata['Tags']}")
-            print("")
-
+    return source_eni, destination_eni
