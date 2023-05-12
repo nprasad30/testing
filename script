@@ -1,35 +1,32 @@
-
-def get_ec2_enis(ec2_resource):
+def get_ec2_enis(ec2_client):
     enis = []
 
-    # Retrieve all EC2 instances
-    instances = ec2_resource.instances.all()
+    # Retrieve all EC2 network interfaces
+    response = ec2_client.describe_network_interfaces()
 
-    # Iterate over the instances and retrieve their associated ENIs
-    for instance in instances:
-        for interface in instance.network_interfaces:
-            eni = {
-                'ENI ID': interface.id,
-                'Private IP': interface.private_ip_address,
-                'Name': '',
-                'Description': '',
-                'Tags': {}
-            }
+    # Iterate over the network interfaces and retrieve their associated information
+    for interface in response['NetworkInterfaces']:
+        eni = {
+            'ENI ID': interface['NetworkInterfaceId'],
+            'Private IP': interface['PrivateIpAddress'],
+            'Name': '',
+            'Description': '',
+            'Tags': {}
+        }
 
-            # Retrieve ENI tags if available
-            if interface.tags:
-                for tag in interface.tags:
-                    if tag['Key'] == 'Name':
-                        eni['Name'] = tag['Value']
-                    elif tag['Key'] == 'Description':
-                        eni['Description'] = tag['Value']
-                    else:
-                        eni['Tags'][tag['Key']] = tag['Value']
+        # Retrieve ENI tags if available
+        if 'TagSet' in interface:
+            for tag in interface['TagSet']:
+                if tag['Key'] == 'Name':
+                    eni['Name'] = tag['Value']
+                elif tag['Key'] == 'Description':
+                    eni['Description'] = tag['Value']
+                else:
+                    eni['Tags'][tag['Key']] = tag['Value']
 
-            enis.append(eni)
+        enis.append(eni)
 
-    return enis
-
+    return eni
 
 def get_ec2_enis(ec2_resource):
     enis = []
