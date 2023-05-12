@@ -1,3 +1,22 @@
+def select_enis(resources):
+    print("Resources and their respective ENIs:")
+    for resource_type, enis in resources.items():
+        print(f"{resource_type}:")
+        for index, eni in enumerate(enis):
+            print(f"  - ENI ID: {enis[index]['ENI ID']}")
+            print(f"    Private IP: {enis[index]['Private IP']}")
+            print(f"    Name: {enis[index]['Name']}")
+            print(f"    Description: {enis[index]['Description']}")
+            print(f"    Tags: {enis[index]['Tags']}")
+
+
+
+
+
+
+
+
+
 def get_ec2_enis(ec2_client):
     enis = []
 
