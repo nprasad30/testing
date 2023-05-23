@@ -7,7 +7,14 @@ def get_ec2_info():
     instances = ec2.instances.all()
 
     for instance in instances:
-        instance_name = [tag['Value'] for tag in instance.tags if tag['Key'] == 'Name'][0]
+        instance_name = None
+        for tag in instance.tags:
+            if tag['Key'] == 'Name':
+                instance_name = tag['Value']
+                break
+        if not instance_name:
+            instance_name = "Unnamed Instance"
+
         for eni in instance.network_interfaces:
             resources["EC2"].append({
                 "Instance Name": instance_name,
