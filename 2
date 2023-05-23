@@ -1,4 +1,5 @@
 import boto3
+from pprint import pprint
 
 def get_ec2_info():
     ec2 = boto3.resource('ec2')
@@ -26,4 +27,4 @@ def get_ec2_info():
 
 # Use the function and print the result
 resources = get_ec2_info()
-print(resources)
+pprint(resources)
