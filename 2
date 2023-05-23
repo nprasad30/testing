@@ -1,0 +1,22 @@
+import boto3
+
+def get_ec2_info():
+    ec2 = boto3.resource('ec2')
+
+    resources = {"EC2": []}
+    instances = ec2.instances.all()
+
+    for instance in instances:
+        instance_name = [tag['Value'] for tag in instance.tags if tag['Key'] == 'Name'][0]
+        for eni in instance.network_interfaces:
+            resources["EC2"].append({
+                "Instance Name": instance_name,
+                "ENI ID": eni.id,
+                "Private IP": eni.private_ip_address
+            })
+
+    return resources
+
+# Use the function and print the result
+resources = get_ec2_info()
+print(resources)
